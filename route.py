@@ -6,7 +6,7 @@ router = APIRouter(tags=["route"])
 @router.get("/route")
 def read_route():
     return {"Route": "FastAPI"}
-
+ 
 @router.get("/route/get/user")
 def read_route():
     return {"Route": "FastAPI"}

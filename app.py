@@ -6,7 +6,7 @@ app = FastAPI()
 
 app.include_router(router)
 app.include_router(main) # type: ignore
-
+ 
 @app.get("/")
 def read_root():
     
