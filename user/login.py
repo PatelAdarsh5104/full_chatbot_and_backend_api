@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from user.database_operations import signup_user ,query_get_all_user_details
 
-login_router = APIRouter(tags=["login"])
+login_router = APIRouter(tags=["login & Signup"])
 
 class User(BaseModel):
     username: str
@@ -11,7 +11,7 @@ class User(BaseModel):
     phone: str
 
 
-@login_router.post("/login")
+@login_router.post("/signup")
 async def sign_in(user: User):
 
     try:
