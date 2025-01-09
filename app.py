@@ -1,7 +1,7 @@
-from fastapi import FastAPI
-from main import *
-from functionality import *
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from chatbot.functionality import *
+from user.login import *
 
 
 app = FastAPI()
@@ -17,8 +17,8 @@ app.add_middleware(
 
 
 ### routers
-app.include_router(main) 
-app.include_router(gemini_model_route) # type: ignore
+app.include_router(login_router)
+app.include_router(gemini_model_route)
 
 
 
@@ -33,3 +33,9 @@ def read_root():
 @app.get("/health_check")
 def read_about():
     return {"health": "Great"}
+
+
+
+@app.get("/main")
+def read_main():
+    return {"Main": "FastAPI"} 
