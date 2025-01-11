@@ -3,3 +3,5 @@ uvicorn
 google-generativeai
 python-dotenv
 aiomysql
+bcrypt # for password hashing
+pydantic[email]
