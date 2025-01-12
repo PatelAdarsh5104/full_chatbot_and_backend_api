@@ -43,11 +43,12 @@ async def create_table_userdetails():
         async with conn.cursor() as cursor:
             await cursor.execute('''CREATE TABLE IF NOT EXISTS userdetails (
                                         id INT AUTO_INCREMENT PRIMARY KEY,
-                                        user_id VARCHAR(36) NOT NULL,
-                                        user_name VARCHAR(45) NOT NULL,
-                                        user_email VARCHAR(100) DEFAULT NULL,
-                                        user_password VARCHAR(100) DEFAULT NULL,
-                                        user_phone VARCHAR(13) DEFAULT NULL,
+                                        user_id VARCHAR(255) NOT NULL,
+                                        user_name VARCHAR(255) NOT NULL,
+                                        name VARCHAR(255) NOT NULL,
+                                        user_email VARCHAR(255) DEFAULT NULL,
+                                        user_password VARCHAR(255) DEFAULT NULL,
+                                        user_phone VARCHAR(255) DEFAULT NULL,
                                         created_at DATETIME DEFAULT NULL
                                         )   ''')
             

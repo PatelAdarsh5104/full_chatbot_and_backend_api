@@ -63,7 +63,7 @@ async def call_gemini(input: Input):
         return {"success": False,"message": "system_instruction is required","data": None}
       
       response =await get_gemini_response(input.question, input.system_instruction,input.user_id,input.session_id)
-      print(response)
+      # print(response)
       
       await insert_question_answer(user_id=input.user_id, session_id=input.session_id,question=input.question,answer=response)
 
