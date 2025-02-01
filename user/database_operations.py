@@ -5,6 +5,7 @@ from db.connection import init_db_pool
 import aiomysql
 from datetime import datetime, timezone
 import uuid
+from user.send_otp import send_otp
 
 
 ### Get all user details function optimized
@@ -185,7 +186,7 @@ async def logout_session(user_id):
         raise Exception(f"An error occurred while logging out: {e}")
     
 
-async def signup_user_email(user_name, user_email, otp, user_phone, name):
+async def signup_user_email(user_name, user_email, user_phone, name):
     pool = await init_db_pool()
     try:
         async with pool.acquire() as conn:
@@ -201,12 +202,13 @@ async def signup_user_email(user_name, user_email, otp, user_phone, name):
                 if count[0] > 0:
                     raise Exception("User already exists with this name. Try a different User_name.")
 
+                ## Generate & Send OTP
+                otp = await send_otp(user_email)
+
                 # Insert user details
                 utc_now = datetime.now(timezone.utc)
                 user_id = str(uuid.uuid4())
                 
-            
-
                 insert_user_query = '''
                     INSERT INTO userdetails (user_id, user_name, name, user_email, otp, user_phone, created_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
