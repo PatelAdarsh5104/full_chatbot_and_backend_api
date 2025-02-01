@@ -183,3 +183,53 @@ async def logout_session(user_id):
 
     except Exception as e:
         raise Exception(f"An error occurred while logging out: {e}")
+    
+
+async def signup_user_email(user_name, user_email, otp, user_phone, name):
+    pool = await init_db_pool()
+    try:
+        async with pool.acquire() as conn:
+            async with conn.cursor() as cursor:
+                # Start a single transaction
+                await conn.begin()
+
+                # Check for duplicate user_name
+                query = 'SELECT COUNT(*) FROM userdetails WHERE user_name = %s'
+                await cursor.execute(query, (user_name,))
+                count = await cursor.fetchone()
+                # return count[0] > 0  # Return True if record exists
+                if count[0] > 0:
+                    raise Exception("User already exists with this name. Try a different User_name.")
+
+                # Insert user details
+                utc_now = datetime.now(timezone.utc)
+                user_id = str(uuid.uuid4())
+                
+            
+
+                insert_user_query = '''
+                    INSERT INTO userdetails (user_id, user_name, name, user_email, otp, user_phone, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                '''
+                await cursor.execute(insert_user_query, (user_id, user_name, name, user_email, otp, user_phone, utc_now))
+
+                # Insert new session
+                session_id = str(uuid.uuid4())
+                insert_session_query = '''
+                    INSERT INTO session (user_id, session_id, active, created_at)
+                    VALUES (%s, %s, %s, %s)
+                '''
+                await cursor.execute(insert_session_query, (user_id, session_id, 1, utc_now))
+
+                # Commit the transaction
+                await conn.commit()
+
+                return {"response": "User signed in successfully.", "user_id": user_id, "user_name": user_name, "session_id": session_id, "name": name}
+    
+    except Exception as e:
+        raise Exception(f"Signin error: {e}")
+
+    finally:
+        pool.close()
+        await pool.wait_closed()
+        print("Database pool closed.")
