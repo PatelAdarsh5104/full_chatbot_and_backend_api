@@ -5,3 +5,5 @@ python-dotenv
 aiomysql
 bcrypt # for password hashing
 pydantic[email]
+PyJWT # for JWT authentication
+google-genai # Updated version of google-generativeai
