@@ -51,7 +51,8 @@ async def create_table_userdetails():
                                         user_password VARCHAR(255) DEFAULT NULL,
                                         otp INT(10) DEFAULT NULL,
                                         user_phone VARCHAR(15) DEFAULT NULL,
-                                        created_at DATETIME DEFAULT NULL
+                                        created_at DATETIME DEFAULT NULL,
+                                        expired_at DATETIME
                                         )   ''')
             
             await conn.commit()

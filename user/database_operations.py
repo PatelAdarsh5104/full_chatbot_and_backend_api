@@ -3,7 +3,7 @@ import bcrypt
 from dotenv import load_dotenv
 from db.connection import init_db_pool
 import aiomysql
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import uuid
 from user.send_otp import send_otp
 
@@ -186,7 +186,7 @@ async def logout_session(user_id):
         raise Exception(f"An error occurred while logging out: {e}")
     
 
-async def signup_user_email(user_name, user_email, user_phone, name):
+async def send_otp_functionality(user_email):
     pool = await init_db_pool()
     try:
         async with pool.acquire() as conn:
@@ -194,39 +194,94 @@ async def signup_user_email(user_name, user_email, user_phone, name):
                 # Start a single transaction
                 await conn.begin()
 
-                # Check for duplicate user_name
-                query = 'SELECT COUNT(*) FROM userdetails WHERE user_name = %s'
-                await cursor.execute(query, (user_name,))
+                # Check if user exists
+                query = 'SELECT COUNT(*) FROM userdetails WHERE user_email = %s'
+                await cursor.execute(query, (user_email,))
                 count = await cursor.fetchone()
-                # return count[0] > 0  # Return True if record exists
-                if count[0] > 0:
-                    raise Exception("User already exists with this name. Try a different User_name.")
+
+                if count[0] == 0:
+                    raise Exception("User does not exist with this email. Please sign up.")
 
                 ## Generate & Send OTP
                 otp = await send_otp(user_email)
 
                 # Insert user details
                 utc_now = datetime.now(timezone.utc)
-                user_id = str(uuid.uuid4())
+                expired_at = utc_now + timedelta(minutes=10)
                 
                 insert_user_query = '''
-                    INSERT INTO userdetails (user_id, user_name, name, user_email, otp, user_phone, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        UPDATE userdetails
+                        SET otp = %s, expired_at = %s
+                        WHERE user_email = %s
                 '''
-                await cursor.execute(insert_user_query, (user_id, user_name, name, user_email, otp, user_phone, utc_now))
+                await cursor.execute(insert_user_query, (otp, expired_at, user_email))
+
+                await conn.commit()
+
+                return {"response": "Opt has been sent successfully.", "email": user_email}
+    
+    except Exception as e:
+        raise Exception(f"Signin error: {e}")
+
+    finally:
+        pool.close()
+        await pool.wait_closed()
+        print("Database pool closed.")
+
+
+async def varify_opt_function(user_email, otp):
+    pool = await init_db_pool()
+    try:
+        async with pool.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cursor:
+                # Start a single transaction
+                await conn.begin()
+
+                # Check for duplicate user_name
+                query = 'SELECT * FROM userdetails WHERE user_email = %s'
+                await cursor.execute(query, (user_email,))
+                user_data = await cursor.fetchone()
+
+
+                if user_data is None:
+                    raise Exception("User does not exist with this email. Please sign up.")
+                
+                if user_data["expired_at"].tzinfo is None:
+                    user_data["expired_at"] = user_data["expired_at"].replace(tzinfo=timezone.utc)
+                
+                if user_data["otp"] != otp:
+                    raise Exception("Invalid OTP. Please try again.")
+                
+                elif user_data["expired_at"] < datetime.now(timezone.utc):
+                    raise Exception("OTP has expired. Please try again.")
+                
+                # Generate new session in the same transaction
+                utc_now = datetime.now(timezone.utc)
+                session_id = str(uuid.uuid4())
+
+                # Inactivate any previous active session for the user
+                deactivate_session_query = '''
+                    UPDATE session 
+                    SET active = 0, updated_at = %s 
+                    WHERE user_id = %s AND active = 1
+                '''
+                await cursor.execute(deactivate_session_query, (utc_now, user_data["user_id"]))
 
                 # Insert new session
-                session_id = str(uuid.uuid4())
                 insert_session_query = '''
                     INSERT INTO session (user_id, session_id, active, created_at)
                     VALUES (%s, %s, %s, %s)
                 '''
-                await cursor.execute(insert_session_query, (user_id, session_id, 1, utc_now))
+                await cursor.execute(insert_session_query, (user_data["user_id"], session_id, 1, utc_now))
 
                 # Commit the transaction
                 await conn.commit()
 
-                return {"response": "User signed in successfully.", "user_id": user_id, "user_name": user_name, "session_id": session_id, "name": name}
+                return {"response": "Opt has been varified and Login successfully.",
+                        "user_id": user_data["user_id"],
+                        "session_id": session_id,
+                        "user_name": user_data["user_name"],
+                        "user_email": user_data["user_email"]}
     
     except Exception as e:
         raise Exception(f"Signin error: {e}")
