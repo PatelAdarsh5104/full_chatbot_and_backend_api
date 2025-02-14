@@ -6,6 +6,7 @@ import aiomysql
 from datetime import datetime, timezone, timedelta
 import uuid
 from user.send_otp import send_otp
+from utilities.jwt_token import generate_jwt
 
 
 ### Get all user details function optimized
@@ -75,13 +76,17 @@ async def login_and_manage_session(user_name, password):
                 # Commit the transaction
                 await conn.commit()
 
+                token = await generate_jwt(user_record["user_id"], user_name, user_record["user_email"])
+
+
                 # Return login details with session info
                 return {
                         "response": "Login successful!",
                         "user_id": user_record["user_id"],
                         "session_id": session_id,
                         "user_name": user_record["user_name"],
-                        "user_email": user_record["user_email"]
+                        "user_email": user_record["user_email"],
+                        "token": token
                     }
 
     except Exception as e:
