@@ -2,6 +2,7 @@ from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from chatbot.functionality import *
 from user.login import *
+from chatbot.streaming_response import *
 
 
 app = FastAPI()
@@ -19,6 +20,7 @@ app.add_middleware(
 ### routers
 app.include_router(login_router)
 app.include_router(gemini_model_route)
+app.include_router(test_router)
 
 
 
