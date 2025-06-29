@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, EmailStr
 from user.database_operations import signup_user ,query_get_all_user_details, logout_session, login_and_manage_session , send_otp_functionality, varify_opt_function
 from utilities.jwt_token import generate_jwt
@@ -124,5 +124,17 @@ async def verify_otp(user: VarifyOtp_model):
         logger.info(f"User name: {user.email}, Api: verify otp")
         return {"success": True, "message": None, "data": response}
     
+    except Exception as e:
+        return {"success": False, "message": str(e), "data": None}
+    
+
+
+@login_router.get("/get-ip")
+async def get_ip(request: Request):
+    try:
+        ip_address = request.client.host
+        port = request.client.port
+        logger.info(f"IP Address: {ip_address}, Api: get_ip, port:{port}")
+        return {"success": True, "message": None, "data": {"ip_address": ip_address, "port": port}}
     except Exception as e:
         return {"success": False, "message": str(e), "data": None}
